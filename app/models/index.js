@@ -17,6 +17,7 @@ const db = {};
 
 db.users = require("./user")(sequelizeInstance, Sequelize);
 db.admins = require("./admin")(sequelizeInstance, Sequelize);
+db.role = require("./role")(sequelizeInstance, Sequelize);
 db.categories = require("./category")(sequelizeInstance, Sequelize);
 db.products = require("./products")(sequelizeInstance, Sequelize);
 db.varients = require("./varients")(sequelizeInstance, Sequelize);
@@ -33,6 +34,9 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelizeInstance;
 
 /********* relations ************************/
+db.role.hasMany(db.admins, {foreignKey : "roleId"} )
+db.admins.belongsTo(db.role)
+
 db.categories.hasMany(db.products, { foreignKey: "categoryId" });
 db.products.belongsTo(db.categories)
 
