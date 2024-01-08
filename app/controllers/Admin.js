@@ -4,8 +4,13 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 var nodemailer = require("nodemailer");
 const { errorHandler } = require("./errHandler");
+const { sendSmsTwilio } = require("./Sms");
 // const adminSession = require('../models/AdminSession');
+const { getSettingByNameInternal } = require('../controllers/Setting');
+
 const admins = db.admins;
+const otp = db.otp;
+
 /*************************** **************************/
 // create token on admin
 const createToken = async (admin) => {
@@ -19,12 +24,13 @@ const createToken = async (admin) => {
       { id: admin.id },
       process.env.JWT_REFRESH_TOKEN_KEY
     );
+    console.log('Access token and refresh token generated successfully for admin ID:', admin.id);
     return {
       accessToken: token,
       refreshToken: refreshToken,
     };
   } catch (err) {
-    console.log("error", err);
+    console.error('Error generating tokens for admin ID:', admin.id, 'Error:', err.message);
     return { error: true };
   }
 };
@@ -58,7 +64,7 @@ const makeCode = async () => {
 };
 
 //send email of forget password
-exports.forgetPassword = async(req, res) => {
+exports.forgetPassword = async (req, res) => {
   try {
     let { email } = req?.body;
     let adminExists = await db.admins.findOne({
@@ -66,8 +72,8 @@ exports.forgetPassword = async(req, res) => {
         email
       }
     })
-    console.log("---------[forgetPassword]----------", adminExists)
-    if(adminExists) {
+    console.log("---------[forgetPassword]----------", process.env.SENDER_PASS)
+    if (adminExists) {
       var transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -76,14 +82,14 @@ exports.forgetPassword = async(req, res) => {
         },
       });
       let code = await makeCode();
-      if(!code.error){
+      if (!code.error) {
         var mailOptions = {
           from: process.env.SENDER_EMAIL,
           to: adminExists?.email,
           subject: "Forget Password",
-          text: code,
+          text: " Dear \n Please use this security code to update password. " + code + "\n \n Pizza and Pizza",
         };
-    
+
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
             console.log(error);
@@ -95,8 +101,8 @@ exports.forgetPassword = async(req, res) => {
               where: {
                 id: adminExists?.id
               }
-            }).then(()=> {
-              res.status(200).send({success: true, message: "code is sent to your email."});
+            }).then(() => {
+              res.status(200).send({ success: true, message: "code is sent to your email." });
             })
           }
         });
@@ -111,14 +117,15 @@ exports.forgetPassword = async(req, res) => {
     res.send(errorHandler[500]);
   }
 };
+
 /*********************** *********************/
 exports.login = async (req, res, next) => {
   try {
-    console.log("admin login");
-    console.log("admin login-----------------------------------------------------------------");
-    console.log(req);
     const email = req?.body?.email?.trim?.();
     const password = req?.body?.password?.trim?.();
+    let twofactorPhoneEnabled = false;
+    let twofactorEmailEnabled = false;
+
     if (email && password) {
       let adminData = await admins.findOne({
         where: {
@@ -133,41 +140,116 @@ exports.login = async (req, res, next) => {
         let hash = adminData?.password;
         let result = bcrypt.compareSync(password, hash);
         if (result) {
-          if(adminData?.twoFactorEnabled){
-            var transporter = nodemailer.createTransport({
-              service: "gmail",
-              auth: {
-                user: process.env.SENDER_EMAIL,
-                pass: process.env.SENDER_PASS,
-              },
-            });
-            let code = await makeCode();
-            if(!code.error){
-              var mailOptions = {
-                from: process.env.SENDER_EMAIL,
-                to: adminData?.email,
-                subject: "Two Factor Code.",
-                text: `Your Two Factor Authentication code is ${code}.`,
-              };
-          
-              transporter.sendMail(mailOptions, function (error, info) {
-                if (error) {
-                  console.log(error);
-                } else {
-                  console.log("Email sent: " + info.response);
-                  db.admins.update({
-                    code
-                  }, {
-                    where: {
-                      id: adminData?.id
-                    }
-                  }).then(()=> {
-                    res.status(200).send({success: true, message: "Two Factor Code is Sent To Your Email." });
-                  })
-                }
-              });
+
+          //get all settings
+          console.log(adminData.adminType);
+          console.log(adminData);
+
+          //if not verified then verify email.
+          if (!adminData?.emailVerified) {
+            console.log("----1----------------------------email verified false");
+
+            // fetch auth setting for admin or user login.
+            if (adminData.adminType === "admin") {
+              const settingsEmail = await getSettingByNameInternal("TWO_FACTOR_AUTH_ADMIN_EMAIL");
+              console.log(settingsEmail);
+              console.log("----2----------------------------email verified false");
+              if (settingsEmail.value === "true") {
+                twofactorEmailEnabled = true;
+              }
+            } else if (adminData.adminType === "user") {
+              const settingsEmail = await getSettingByNameInternal("TWO_FACTOR_AUTH_USER_EMAIL");
+              console.log(settingsEmail);
+              if (settingsEmail.value === "true") {
+                twofactorEmailEnabled = true;
+              }
             }
-          } else {
+            console.log(twofactorEmailEnabled);
+            // if email auth
+            if (twofactorEmailEnabled) {
+              console.log("going to verify email")
+              var transporter = nodemailer.createTransport({
+                service: "gmail",
+                auth: {
+                  user: process.env.SENDER_EMAIL,
+                  pass: process.env.SENDER_PASS,
+                },
+              });
+              let code = await makeCode();
+              const settingResult = await getSettingByNameInternal("AUTH_EMAIL_MESSAGE_CONTENT");
+
+              if (!code.error) {
+                var mailOptions = {
+                  from: process.env.SENDER_EMAIL,
+                  to: adminData?.email,
+                  subject: "Two Factor Code.",
+                  text: settingResult?.value + code || `Your Two Factor Authentication code is ${code}.`,
+                };
+
+                transporter.sendMail(mailOptions, function (error, info) {
+                  if (error) {
+                    console.log(error);
+                  } else {
+                    console.log("Email sent: " + info.response);
+                    db.admins.update({
+                      emailOtp: code
+                    }, {
+                      where: {
+                        id: adminData?.id
+                      }
+                    })
+                  }
+                });
+              }
+            }
+          }
+          console.log("----00----------------------------email verified false");
+
+          //if not verified then verify phone.
+          if (adminData.phoneVerified == false) {
+            console.log("----10----------------------------email verified false");
+
+            // fetch auth setting for admin or user login.
+            if (adminData.adminType === "admin") {
+              const settingsPhone = await getSettingByNameInternal("TWO_FACTOR_AUTH_ADMIN_PHONE");
+              console.log("----11----------------------------email verified false");
+
+              console.log(settingsPhone);
+              if (settingsPhone.value === "true") {
+                console.log("----12----------------------------email verified false");
+
+                twofactorPhoneEnabled = true;
+              }
+            } else if (adminData.adminType === "user") {
+              const settingsPhone = await getSettingByNameInternal("TWO_FACTOR_AUTH_USER_PHONE");
+              console.log(settingsPhone);
+              if (settingsPhone.value === "true") {
+                twofactorPhoneEnabled = true;
+              }
+            }
+            console.log(twofactorPhoneEnabled);
+
+            // if phone auth
+            if (twofactorPhoneEnabled) {
+              console.log("Going to verify phone");
+              this.sendOtpInternally(adminData.phoneNumber);
+            }
+          }
+
+          //response sending if auth
+          if (twofactorEmailEnabled && !twofactorPhoneEnabled) {
+            res.status(200).send({ success: true, message: "Two Factor Code is Sent To Your Email.", twoFactorEnabled: 1 });
+
+          } else if (!twofactorEmailEnabled && twofactorPhoneEnabled) {
+            res.status(200).send({ success: true, message: "Two Factor Code is Sent To Your Phone.", twoFactorEnabled: 2 });
+
+          } else if (twofactorEmailEnabled && twofactorPhoneEnabled) {
+            res.status(200).send({ success: true, message: "Two Factor Code is Sent To Your Email and Phone.", twoFactorEnabled: 3 });
+          }
+
+
+          //if no auth
+          if (!twofactorPhoneEnabled && !twofactorEmailEnabled) {
             let tokens = await createToken(adminData);
             if (!tokens?.not_created && !tokens.error) {
               res.status(200).send({
@@ -203,66 +285,142 @@ exports.login = async (req, res, next) => {
 
 exports.verifyTwoFactor = async (req, res, next) => {
   try {
-    let { code } = req?.body;
-    console.log("...admin two factor...")
-    let adminData = await db.admins.findOne({
-      where: {
-        code
+    let { phoneOtp, emailOtp, email } = req?.body;
+
+    let phoneVerified = true;
+    let emailVerified = true;
+    if (phoneOtp) {
+      phoneVerified = false;
+    }
+    if (emailOtp) {
+      emailVerified = false;
+    }
+    if (email) {
+      console.log("...admin two factor...")
+      let adminData = await db.admins.findOne({
+        where: {
+          email
+        }
+      });
+      if(!adminData) {
+        res.status(403).send({ message: "No admin found against this email."});
       }
-    })
-    console.log("------[verifyTwoFactor]--------{adminData}--------", adminData)
-    if(adminData){
-      let tokens = await createToken(adminData);
-      if (!tokens?.not_created && !tokens.error) {
-        await db.admins.update({
-          code: null
-        }, {
-          where: {
-            id: adminData?.id
-          }
-        })
-        res.status(200).send({
-          adminId: adminData?.id,
-          adminEmail: adminData?.email,
-          firstName: adminData?.firstName,
-          lastName: adminData?.lastName,
-          tokens: tokens,
-          ...adminData
-        });
-      } else if (tokens?.not_created) {
-        res.send(errorHandler[400])
-      } else if (tokens?.error) {
-        res.send(errorHandler[503])
-      } else {
-        res.send(errorHandler[500])
+      if (adminData?.emailOtp === emailOtp && emailVerified == false) {
+        console.log("helo111111111111");
+        emailVerified = true;
+      }
+      if (adminData?.phoneOtp === phoneOtp && phoneVerified == false) {
+        console.log("76767676767676");
+
+        phoneVerified = true;
+      }
+      console.log("------[verifyTwoFactor]--------{adminData}--------", adminData)
+      if (adminData && phoneVerified && emailVerified) {
+        let tokens = await createToken(adminData);
+        if (!tokens?.not_created && !tokens.error) {
+          await db.admins.update({
+            emailOtp: null,
+            phoneOtp: null,
+            phoneVerified: phoneVerified,
+            emailVerified: emailVerified,
+          }, {
+            where: {
+              id: adminData?.id
+            }
+          })
+          res.status(200).send({
+            adminId: adminData?.id,
+            adminEmail: adminData?.email,
+            firstName: adminData?.firstName,
+            lastName: adminData?.lastName,
+            tokens: tokens,
+            ...adminData
+          });
+        } else if (tokens?.not_created) {
+          res.send(errorHandler[400])
+        } else if (tokens?.error) {
+          res.send(errorHandler[503])
+        } else {
+          res.send(errorHandler[500])
+        }
+      }else{
+        res.status(400).send({ message: "email otp  or phone otp not correct", twoFactorEnabled: 3 });
+
       }
     } else {
       res.send(errorHandler[400])
     }
+
   } catch (err) {
     console.log("error", err);
     res.send(errorHandler[503])
   }
 };
 
+// exports.verifyTwoFactor = async (req, res, next) => {
+//   try {
+//     let { code } = req?.body;
+//     console.log("...admin two factor...")
+//     let adminData = await db.admins.findOne({
+//       where: {
+//         code
+//       }
+//     })
+//     console.log("------[verifyTwoFactor]--------{adminData}--------", adminData)
+//     if (adminData) {
+//       let tokens = await createToken(adminData);
+//       if (!tokens?.not_created && !tokens.error) {
+//         await db.admins.update({
+//           code: null
+//         }, {
+//           where: {
+//             id: adminData?.id
+//           }
+//         })
+//         res.status(200).send({
+//           adminId: adminData?.id,
+//           adminEmail: adminData?.email,
+//           firstName: adminData?.firstName,
+//           lastName: adminData?.lastName,
+//           tokens: tokens,
+//           ...adminData
+//         });
+//       } else if (tokens?.not_created) {
+//         res.send(errorHandler[400])
+//       } else if (tokens?.error) {
+//         res.send(errorHandler[503])
+//       } else {
+//         res.send(errorHandler[500])
+//       }
+//     } else {
+//       res.send(errorHandler[400])
+//     }
+//   } catch (err) {
+//     console.log("error", err);
+//     res.send(errorHandler[503])
+//   }
+// };
+
 exports.updateTwoFactorStatus = async (req, res, next) => {
   try {
     let { id } = req?.user;
+    console.log(id);
+    console.log("-  - -                   -----------");
     let userData = await db.admins.findOne({
       where: {
         id
       }
     })
-    if(userData){
+    if (userData) {
       let updateStatus = await db.admins.update({
         twoFactorEnabled: userData?.twoFactorEnabled ? false : true
       },
-      {
-        where: {
-          id
-        }
-      })
-      if(updateStatus[0] > 0){
+        {
+          where: {
+            id
+          }
+        })
+      if (updateStatus[0] > 0) {
         res.status(200).send({ success: true, message: "Two Factor Status Updated." })
       } else {
         res.send(errorHandler[400])
@@ -487,6 +645,7 @@ exports.updateTwoFactorStatus = async (req, res, next) => {
 //   }
 // };
 
+
 // update password after email for admin.
 exports.updatePassword = async (req, res, next) => {
   try {
@@ -516,7 +675,7 @@ exports.updatePassword = async (req, res, next) => {
       );
       console.log("updatedRows", updatedRows);
       if (updatedRows[0] > 0) {
-        res.status(200).send({ success: true, message: "password update." });
+        res.status(200).send({ success: true, message: "password updated." });
       } else {
         res.send(errorHandler[400])
       }
@@ -529,7 +688,6 @@ exports.updatePassword = async (req, res, next) => {
   }
 }
 
-
 exports.getAdmins = async (req, res) => {
   try {
     const result = await admins.findAll();
@@ -539,32 +697,37 @@ exports.getAdmins = async (req, res) => {
     res.send(errorHandler[500])
   }
 }
+
 exports.createAdmin = async (req, res) => {
   try {
+    console.log("_______________________________________");
     // Extract admin data from the request body
-    const { firstName, lastName, email, password,  } = req.body;
-    if((!firstName && !lastName) || !email || !password)
-      res.send(errorHandler[400])
-    else {
+    const { firstName, lastName, email, password, phoneNumber, roleId } = req.body;
+    if ((!firstName && !lastName) || !email || !password || !phoneNumber || !roleId) {
+      res.status(200).send("Please enter firstName, lastName, email, password, phoneNumber and roleId");
+    } else {
       let hashedPassword = bcrypt.hashSync(
         password,
         parseInt(process.env.BCRYPT_SALT)
       );
-  
+
       // Create a new admin using Sequelize
       const admin = await admins.create({
         firstName,
         lastName,
         email,
         password: hashedPassword,
+        phoneNumber: phoneNumber,
+        roleId: roleId
       });
       res.status(201).json({ data: admin });
     }
   } catch (error) {
     console.error(error);
-    res.send(errorHandler[500]);
+    res.status(400).send(error.errors[0].message);
   }
 }
+
 exports.status = async (req, res) => {
   try {
     const { id, status } = req.query;
@@ -572,7 +735,7 @@ exports.status = async (req, res) => {
     // Find the admin by ID
     const admin = await admins.update({
       active: status
-    },{
+    }, {
       where: {
         id
       }
@@ -584,6 +747,7 @@ exports.status = async (req, res) => {
     res.send(errorHandler[500]);
   }
 }
+
 exports.deleteAdmin = async (req, res) => {
   try {
     const { id } = req.params;
@@ -599,6 +763,106 @@ exports.deleteAdmin = async (req, res) => {
     await admin.destroy();
 
     res.json({ message: 'Admin deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.send(errorHandler[500]);
+  }
+}
+
+exports.sendOtp = async (req, res) => {
+  try {
+    const { phoneNo } = req.body;
+    const params = phoneNo;
+    console.log(phoneNo);
+    // 
+
+    // Find the admin by ID
+    if (!phoneNo) {
+      res.status(200).send("Please enter phoneNo");
+    }
+    // generate 4 digit random number.
+
+    const randomNumber = Math.floor(Math.random(4000) * 4000);
+    console.log(randomNumber);
+    let twilioRes, otpRes;
+
+    // send otp in live mode
+    if (process.env.MODE === "live") {
+      twilioRes = await sendSmsTwilio({ phoneNumber: phoneNumber, message: "Your OTP code is " + randomNumber });        // Create a new admin using Sequelize
+      const dbObject = {
+        otp: randomNumber,
+        phoneNo: params,
+        deliveryStatus: 'sent'
+      }
+      otpRes = await otp.create(dbObject);
+      console.log(twilioRes);
+    } else {
+      const dbObject = {
+        otp: 1111,
+        phoneNo: params,
+        deliveryStatus: 'sent'
+      }
+      otpRes = await otp.create(dbObject);
+    }
+    res.status(200).send({ data: otpRes });
+  } catch (error) {
+    console.error(error);
+    res.send(errorHandler[500]);
+  }
+}
+
+exports.sendOtpInternally = async (phoneNo) => {
+  try {
+    // generate 4 digit random number.
+    const randomNumber = Math.floor(Math.random(4000) * 4000);
+    console.log(randomNumber);
+    let twilioRes, otpRes;
+
+    //Get otp message template.
+    const settingsOtp = getSettingByNameInternal("AUTH_PHONE_MESSAGE_CONTENT");
+    const messageTemplate = settingsOtp.value || "Please use this code to verify phone number ";
+    // send otp in live mode
+    if (process.env.MODE === "live") {
+      twilioRes = await sendSmsTwilio({ phoneNumber: phoneNumber, message: messageTemplate + randomNumber });        // Create a new admin using Sequelize
+      const admin = {
+        otp: randomNumber,
+        phoneNo: params,
+        deliveryStatus: 'sent'
+      }
+      otpRes = await otp.create(dbObject);
+      console.log(twilioRes);
+    } else {
+      const dbObject = {
+        otp: 1111,
+        phoneNo: params,
+        deliveryStatus: 'sent'
+      }
+      otpRes = await otp.create(dbObject);
+    }
+    return otpRes;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { id, phoneNo, otp } = req.body;
+
+    if (!phoneNo || !id) {
+      res.status(200).send("Please enter phoneNumber && id");
+    }
+    const verifyObject = await otp.findByPk(id);
+
+    console.log(verifyObject);
+    if (verifyObject?.phoneNo === phoneNo) {
+      res.status(400).send({ error: "Phone Number not matched" });
+    }
+    if (verifyObject?.otp === otp) {
+      res.status(200).send({ success: true });
+    } else {
+      res.status(400).send({ error: "Otp not matched." });
+    }
   } catch (error) {
     console.error(error);
     res.send(errorHandler[500]);

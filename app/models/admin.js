@@ -13,7 +13,7 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: false,
       },
       phoneNumber: {
-        type: Sequelize.NUMBER,
+        type: Sequelize.INTEGER,
         allowNull: false,
       },
       // registrationDate: {
@@ -25,7 +25,7 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: true,
       },
       adminType: {
-        type: Sequelize.ENUM("super_admin", "admin"),
+        type: Sequelize.ENUM("super_admin", "admin", "user"),
         defaultValue: "admin"
       },
       superAdmin: {
@@ -41,15 +41,42 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: true,
         defaultValue: null
       },
+      emailOtp: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: null
+      },
+      phoneOtp: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: null
+      },
+
       twoFactorEnabled: {
         type: Sequelize.BOOLEAN,
         defaultValue: true
       },
-      permissions:{
-        type: Sequelize.JSON,
+      phoneVerified:{
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      emailVerified:{
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      // permissions:{
+      //   type: Sequelize.JSON,
+      //   allowNull: true,
+      //   defaultValue: null
+      // }
+      roleId: {
+        type: Sequelize.STRING,
         allowNull: true,
-        defaultValue: null
-      }
+        // references: {
+        //   model: 'roles',
+        //   key: 'id',
+        // },
+      },
     },
     {
       indexes: [
@@ -61,5 +88,8 @@ module.exports = (sequelize, Sequelize) => {
       ],
     }
   );
+
+  // adminUsers.belongsTo(sequelize.models.role, { foreignKey: 'roleId' });
+
   return adminUsers
 }

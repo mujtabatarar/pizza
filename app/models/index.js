@@ -15,19 +15,56 @@ const sequelizeInstance = new Sequelize(databaseConfig.DB, databaseConfig.USER, 
 });
 const db = {};
 
-db.users = require("./user")(sequelizeInstance, Sequelize);
-db.admins = require("./admin")(sequelizeInstance, Sequelize);
-db.role = require("./role")(sequelizeInstance, Sequelize);
-db.categories = require("./category")(sequelizeInstance, Sequelize);
-db.products = require("./products")(sequelizeInstance, Sequelize);
-db.varients = require("./varients")(sequelizeInstance, Sequelize);
-db.images = require("./images")(sequelizeInstance, Sequelize);
-//extra
-db.cheese = require('./Extra/cheese')(sequelizeInstance,Sequelize)
-db.crust_type = require('./Extra/crustType')(sequelizeInstance,Sequelize)
-db.sauce = require('./Extra/sauce')(sequelizeInstance,Sequelize)
-db.toppings = require('./Extra/toppings')(sequelizeInstance,Sequelize)
-db.veggies = require('./Extra/veggies')(sequelizeInstance,Sequelize)
+const userModel = require("./user");
+const adminModel = require("./admin");
+const settingModel = require("./setting");
+const roleModel = require("./role");
+const permissionsModel = require("./permissions");
+const categoryModel = require("./category");
+const productsModel = require("./products");
+const varientsModel = require("./varients");
+const imagesModel = require("./images");
+const otpModel = require("./otp");
+
+// extra
+const cheeseModel = require("./Extra/cheese");
+const crustTypeModel = require("./Extra/crustType");
+const sauceModel = require("./Extra/sauce");
+const toppingsModel = require("./Extra/toppings");
+const veggiesModel = require("./Extra/veggies");
+
+db.users = userModel(sequelizeInstance, Sequelize);
+db.admins = adminModel(sequelizeInstance, Sequelize);
+db.setting = settingModel(sequelizeInstance, Sequelize);
+db.role = roleModel(sequelizeInstance, Sequelize);
+db.permissions = permissionsModel(sequelizeInstance, Sequelize);
+db.categories = categoryModel(sequelizeInstance, Sequelize);
+db.products = productsModel(sequelizeInstance, Sequelize);
+db.varients = varientsModel(sequelizeInstance, Sequelize);
+db.images = imagesModel(sequelizeInstance, Sequelize);
+db.otp = otpModel(sequelizeInstance, Sequelize);
+
+// extra
+db.cheese = cheeseModel(sequelizeInstance, Sequelize);
+db.crust_type = crustTypeModel(sequelizeInstance, Sequelize);
+db.sauce = sauceModel(sequelizeInstance, Sequelize);
+db.toppings = toppingsModel(sequelizeInstance, Sequelize);
+db.veggies = veggiesModel(sequelizeInstance, Sequelize);
+// db.users = require("./user")(sequelizeInstance, Sequelize);
+// db.admins = require("./admin")(sequelizeInstance, Sequelize);
+// db.role = require("./role")(sequelizeInstance, Sequelize);
+// db.permissions = require("./permissions")(sequelizeInstance, Sequelize);
+// db.categories = require("./category")(sequelizeInstance, Sequelize);
+// db.products = require("./products")(sequelizeInstance, Sequelize);
+// db.varients = require("./varients")(sequelizeInstance, Sequelize);
+// db.images = require("./images")(sequelizeInstance, Sequelize);
+// db.otp = require("./otp")(sequelizeInstance, Sequelize);
+// //extra
+// db.cheese = require('./Extra/cheese')(sequelizeInstance,Sequelize)
+// db.crust_type = require('./Extra/crustType')(sequelizeInstance,Sequelize)
+// db.sauce = require('./Extra/sauce')(sequelizeInstance,Sequelize)
+// db.toppings = require('./Extra/toppings')(sequelizeInstance,Sequelize)
+// db.veggies = require('./Extra/veggies')(sequelizeInstance,Sequelize)
 
 /************************ *********************/
 db.Sequelize = Sequelize;
