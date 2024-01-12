@@ -15,16 +15,17 @@ const sequelizeInstance = new Sequelize(databaseConfig.DB, databaseConfig.USER, 
 });
 const db = {};
 
-const userModel = require("./user");
-const adminModel = require("./admin");
-const settingModel = require("./setting");
-const roleModel = require("./role");
-const permissionsModel = require("./permissions");
-const categoryModel = require("./category");
-const productsModel = require("./products");
-const varientsModel = require("./varients");
+const customerModel = require("./Order/customer");
+const adminModel = require("./Admin/admin");
+const settingModel = require("./Admin/setting");
+const roleModel = require("./Admin/role");
+const permissionsModel = require("./Admin/permissions");
+const categoryModel = require("./Products/category");
+const productsModel = require("./Products/products");
+const varientsModel = require("./Products/varients");
 const imagesModel = require("./images");
-const otpModel = require("./otp");
+const otpModel = require("./Admin/otp");
+const cartModel = require("./Order/cart");
 
 // extra
 const cheeseModel = require("./Extra/cheese");
@@ -33,7 +34,7 @@ const sauceModel = require("./Extra/sauce");
 const toppingsModel = require("./Extra/toppings");
 const veggiesModel = require("./Extra/veggies");
 
-db.users = userModel(sequelizeInstance, Sequelize);
+db.customers = customerModel(sequelizeInstance, Sequelize);
 db.admins = adminModel(sequelizeInstance, Sequelize);
 db.setting = settingModel(sequelizeInstance, Sequelize);
 db.role = roleModel(sequelizeInstance, Sequelize);
@@ -43,6 +44,7 @@ db.products = productsModel(sequelizeInstance, Sequelize);
 db.varients = varientsModel(sequelizeInstance, Sequelize);
 db.images = imagesModel(sequelizeInstance, Sequelize);
 db.otp = otpModel(sequelizeInstance, Sequelize);
+db.cart = cartModel(sequelizeInstance, Sequelize);
 
 // extra
 db.cheese = cheeseModel(sequelizeInstance, Sequelize);
@@ -74,6 +76,9 @@ db.sequelize = sequelizeInstance;
 db.role.hasMany(db.admins, {foreignKey : "roleId"} )
 db.admins.belongsTo(db.role)
 
+db.categories.hasMany(db.categories, { foreignKey: 'parentId', as: 'subCategories' });
+db.categories.belongsTo(db.categories, { foreignKey: 'parentId', as: 'parentCategory' });
+
 db.categories.hasMany(db.products, { foreignKey: "categoryId" });
 db.products.belongsTo(db.categories)
 
@@ -83,6 +88,11 @@ db.varients.belongsTo(db.products)
 
 db.varients.hasMany(db.images, {foreignKey: "varientId"});
 db.images.belongsTo(db.varients)
+
+db.cart.belongsTo(db.customers);
+db.cart.belongsTo(db.admins);
+db.cart.belongsTo(db.products);
+db.cart.belongsTo(db.varients);
 
 /****************************************** */
 module.exports = db;

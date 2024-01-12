@@ -12,6 +12,10 @@ module.exports = (sequelize, Sequelize) => {
       image: {
         type: Sequelize.STRING,
         allowNull: true
+      },
+      isAvaliable: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
       }
     }
   );

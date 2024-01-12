@@ -40,7 +40,7 @@ app.get('/api/test', (req, res) => {
 });
 
 db.sequelize
-  .sync({ alter: true })
+  .sync({ alter: false })
   .then(() => {
     app.listen(process.env.PORT || 3000);
     //pending set timezone

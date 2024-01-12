@@ -1,32 +1,37 @@
 // order.js
 module.exports = (sequelize, Sequelize) => {
     const Order = sequelize.define("order", {
-      orderNumber: {
-        type: Sequelize.STRING,
+      id: {
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
         allowNull: false,
         unique: true,
+        validate: {
+          min: 11111,
+        },
       },
       status: {
         type: Sequelize.STRING,
         allowNull: false,
-        // Possible values: 'pending', 'active', 'delivered', 'customerCancelled'
+        // 'pending', 'active', 'delivered', 'customerCancelled'
       },
       orderType: {
         type: Sequelize.STRING,
         allowNull: false,
-        // Possible values: 'online', 'offline'
+        // 'online', 'offline'
       },
       paymentMethod: {
         type: Sequelize.STRING,
         allowNull: false,
-        // Possible values: 'cash', 'card'
+        // 'cash', 'card'
       },
       deliveryType: {
         type: Sequelize.STRING,
         allowNull: false,
-        // Possible values: 'onsite', 'offsite'
+        //'onsite', 'offsite'
       },
-      preparationTime: {
+      preparationTimeMinutes: {
         type: Sequelize.INTEGER,
         allowNull: true,
       },
@@ -98,7 +103,7 @@ module.exports = (sequelize, Sequelize) => {
     Order.belongsTo(sequelize.models.restaurant, { foreignKey: 'restaurantId' });
     Order.belongsTo(sequelize.models.day, { foreignKey: 'dayId' });
     Order.hasMany(sequelize.models.orderItem, { onDelete: 'CASCADE' });
-    Order.belongsTo(sequelize.models.promoCode, { foreignKey: 'promoCode', targetKey: 'name', as: 'promo' });
+    // Order.belongsTo(sequelize.models.promoCode, { foreignKey: 'promoCode', targetKey: 'name', as: 'promo' });
   
     // Calculate distance between two sets of latitude and longitude coordinates
     Order.prototype.calculateDistance = function (restaurantLatitude, restaurantLongitude) {

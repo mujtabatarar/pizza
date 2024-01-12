@@ -8,6 +8,10 @@ module.exports = (sequelize, Sequelize) => {
       price: {
         type: Sequelize.STRING,
         allowNull: true
+      },
+      isAvaliable: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
       }
     }
   );

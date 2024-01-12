@@ -13,6 +13,10 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
         allowNull: true
       },
+      isAvaliable: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+      },
       image: {
         type: Sequelize.STRING,
         allowNull: true

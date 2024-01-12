@@ -813,6 +813,8 @@ exports.sendOtp = async (req, res) => {
 
 exports.sendOtpInternally = async (phoneNo) => {
   try {
+    console.log(phoneNo);
+    console.log("going to send otp on phone")
     // generate 4 digit random number.
     const randomNumber = Math.floor(Math.random(4000) * 4000);
     console.log(randomNumber);
@@ -822,22 +824,31 @@ exports.sendOtpInternally = async (phoneNo) => {
     const settingsOtp = getSettingByNameInternal("AUTH_PHONE_MESSAGE_CONTENT");
     const messageTemplate = settingsOtp.value || "Please use this code to verify phone number ";
     // send otp in live mode
-    if (process.env.MODE === "live") {
+    if (process.env.MODE === "LIVE") {
       twilioRes = await sendSmsTwilio({ phoneNumber: phoneNumber, message: messageTemplate + randomNumber });        // Create a new admin using Sequelize
       const admin = {
         otp: randomNumber,
         phoneNo: params,
         deliveryStatus: 'sent'
       }
-      otpRes = await otp.create(dbObject);
-      console.log(twilioRes);
+      const adminUpdate = admin.update({phoneOtp: randomNumber},{where: {
+        phoneNumber: phoneNo
+      }})
+      // otpRes = await otp.create(dbObject);
+      console.log(adminUpdate);
     } else {
+      console.log(" dev mode");
       const dbObject = {
         otp: 1111,
-        phoneNo: params,
+        phoneNo: phoneNo,
         deliveryStatus: 'sent'
       }
+      const adminUpdate = await admins.update({phoneOtp: 1111},{where: {
+        phoneNumber: phoneNo
+      }})
       otpRes = await otp.create(dbObject);
+      console.log(adminUpdate);
+      // otpRes = await otp.create(dbObject);
     }
     return otpRes;
   } catch (error) {

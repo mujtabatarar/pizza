@@ -12,6 +12,7 @@ router.post("/pizza", products.pizzas.create);
 router.put("/pizza", products.pizzas.update);
 router.delete("/pizza", products.pizzas.delete);
 
+
 router.get("/variants", products.variants.get);
 router.post("/variants", products.variants.create);
 router.put("/variants", products.variants.update);
@@ -21,6 +22,9 @@ router.get("/category", products.categories.get);
 router.post("/category", products.categories.create);
 router.put("/category", products.categories.update);
 router.delete("/category", products.categories.delete);
+router.get("/category/main", products.categories.getOnlyCategories);
+router.get("/category/one", products.categories.getOne);
+
 
 // extra
 
