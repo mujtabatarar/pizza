@@ -18,13 +18,19 @@ router.post("/variants", products.variants.create);
 router.put("/variants", products.variants.update);
 router.delete("/variants", products.variants.delete);
 
-router.get("/category", products.categories.get);
-router.post("/category", products.categories.create);
-router.put("/category", products.categories.update);
-router.delete("/category", products.categories.delete);
-router.get("/category/main", products.categories.getOnlyCategories);
-router.get("/category/one", products.categories.getOne);
+router.get("/category", products.category.get);
+router.post("/category", products.category.create);
+router.put("/category", products.category.update);
+router.delete("/category", products.category.delete);
+router.get("/category/main", products.category.getOnlyCategories);
+router.get("/category/one", products.category.getOne);
 
+// router.post("/promo", products.promo.create);
+// router.put("/promo", products.promo.update);
+// router.delete("/promo", products.promo.delete);
+// router.get("/promos/usage", products.promo.getAllPromoCodeWithUsageBasicDetails);
+// router.get("/promo/usages", products.promo.getParticularPromoFullUsageDetais);
+// router.get("/promo", products.promo.getParticularPromoFullUsageDetais);
 
 // extra
 

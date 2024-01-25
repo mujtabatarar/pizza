@@ -113,4 +113,26 @@ exports.deleteSettingById = async (req, res) => {
   }
 };
 
+//for all timming.
+exports.getTimmingDetails = async (req, res) => {
+  try {
+    
+    const settings = await setting.findOne({
+      where: { name: req?.params?.name },
+    });
+
+    if (settings) {
+      console.log('Setting by name:', settings.toJSON());
+      res.status(200).send({ success: true, data: settings });
+    } else {
+      console.log('Setting not found');
+      res.status(400).send({ error: "no data found" });
+    }
+  } catch (error) {
+    console.error('Error getting setting by name:', error.message);
+    res.status(500).send({ error: error.message });
+  }
+};
+
+
 

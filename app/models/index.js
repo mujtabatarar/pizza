@@ -26,6 +26,9 @@ const varientsModel = require("./Products/varients");
 const imagesModel = require("./images");
 const otpModel = require("./Admin/otp");
 const cartModel = require("./Order/cart");
+const orderModel = require("./Order/order");
+const orderItemModel = require("./Order/orderItem");
+const promoModel = require("./promo");
 
 // extra
 const cheeseModel = require("./Extra/cheese");
@@ -39,13 +42,15 @@ db.admins = adminModel(sequelizeInstance, Sequelize);
 db.setting = settingModel(sequelizeInstance, Sequelize);
 db.role = roleModel(sequelizeInstance, Sequelize);
 db.permissions = permissionsModel(sequelizeInstance, Sequelize);
-db.categories = categoryModel(sequelizeInstance, Sequelize);
+db.category = categoryModel(sequelizeInstance, Sequelize);
 db.products = productsModel(sequelizeInstance, Sequelize);
 db.varients = varientsModel(sequelizeInstance, Sequelize);
 db.images = imagesModel(sequelizeInstance, Sequelize);
 db.otp = otpModel(sequelizeInstance, Sequelize);
 db.cart = cartModel(sequelizeInstance, Sequelize);
-
+db.order = orderModel(sequelizeInstance, Sequelize);
+db.orderItem = orderItemModel(sequelizeInstance, Sequelize);
+db.promo = promoModel(sequelizeInstance, Sequelize);
 // extra
 db.cheese = cheeseModel(sequelizeInstance, Sequelize);
 db.crust_type = crustTypeModel(sequelizeInstance, Sequelize);
@@ -76,11 +81,14 @@ db.sequelize = sequelizeInstance;
 db.role.hasMany(db.admins, {foreignKey : "roleId"} )
 db.admins.belongsTo(db.role)
 
-db.categories.hasMany(db.categories, { foreignKey: 'parentId', as: 'subCategories' });
-db.categories.belongsTo(db.categories, { foreignKey: 'parentId', as: 'parentCategory' });
+// db.category.hasMany(db.category, { foreignKey: 'parentId', as: 'subCategories' });
+// db.category.belongsTo(db.category, { foreignKey: 'parentId', as: 'parentCategory' });
+// Assuming db is your Sequelize instance
+db.category.hasMany(db.category, { as: 'subCategories', foreignKey: 'parentId' });
+db.category.belongsTo(db.category, { as: 'parentCategory', foreignKey: 'parentId' });
 
-db.categories.hasMany(db.products, { foreignKey: "categoryId" });
-db.products.belongsTo(db.categories)
+db.category.hasMany(db.products, { foreignKey: "categoryId" });
+db.products.belongsTo(db.category)
 
 db.products.hasMany(db.varients, { foreignKey: "productId" });
 db.varients.belongsTo(db.products)
@@ -93,6 +101,23 @@ db.cart.belongsTo(db.customers);
 db.cart.belongsTo(db.admins);
 db.cart.belongsTo(db.products);
 db.cart.belongsTo(db.varients);
+
+// db.order.belongsTo(db.customers, { foreignKey: 'customerId' });
+// db.order.belongsTo(db.admins, { foreignKey: 'adminId' });
+
+// Order.belongsTo(sequelize.models.restaurant, { foreignKey: 'restaurantId' });
+// Order.belongsTo(sequelize.models.day, { foreignKey: 'dayId' });
+db.order.hasMany(db.orderItem, { onDelete: 'CASCADE' });
+// db.order.belongsTo(sequelize.models.promoCode, { foreignKey: 'promoCode', targetKey: 'name', as: 'promo' });
+
+// db.promo.hasMany(db.order);
+// db.order.belongsTo(db.promo);
+
+db.orderItem.belongsTo(db.order);
+db.orderItem.belongsTo(db.products);
+db.orderItem.belongsTo(db.varients);
+
+
 
 /****************************************** */
 module.exports = db;

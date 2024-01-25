@@ -1,6 +1,6 @@
 // promoCode.js
 module.exports = (sequelize, Sequelize) => {
-    const PromoCode = sequelize.define("promoCode", {
+    const promoCode = sequelize.define("promoCode", {
       name: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -37,19 +37,33 @@ module.exports = (sequelize, Sequelize) => {
       applicablePaymentTypes: {
         type: Sequelize.STRING,
         allowNull: true,
-        // Comma-separated values, e.g., 'cash,card', both
+        // Comma-separated values, e.g., 'CASH','CARD', 'BOTH',
       },
-      applicablePaymentTypes: {
-        type: Sequelize.STRING,
+      forFirstOrder:{
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+      },
+      isDeleted: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+      },
+      expiryDate:{
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      startDate: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      status: {
+        type: Sequelize.BOOLEAN,
         allowNull: true,
-        // Comma-separated values, e.g., 'cash,card', both
-      },
-
+      }
     });
   
     // Define associations
-    PromoCode.hasMany(sequelize.models.order, { foreignKey: 'promoCode', sourceKey: 'name' });
+    // PromoCode.hasMany(sequelize.models.order, { foreignKey: 'promoCode', sourceKey: 'name' });
   
-    return PromoCode;
+    return promoCode;
   };
   

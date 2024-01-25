@@ -70,7 +70,7 @@ module.exports = (sequelize, Sequelize) => {
       //   defaultValue: null
       // }
       roleId: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
         allowNull: true,
         // references: {
         //   model: 'roles',

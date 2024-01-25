@@ -1,6 +1,6 @@
 // order.js
 module.exports = (sequelize, Sequelize) => {
-    const Order = sequelize.define("order", {
+    const order = sequelize.define("order", {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
@@ -8,7 +8,7 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: false,
         unique: true,
         validate: {
-          min: 11111,
+          min: 10000,
         },
       },
       status: {
@@ -16,10 +16,10 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: false,
         // 'pending', 'active', 'delivered', 'customerCancelled'
       },
-      orderType: {
+      orderFrom: {
         type: Sequelize.STRING,
         allowNull: false,
-        // 'online', 'offline'
+        // 'admin', 'customer',
       },
       paymentMethod: {
         type: Sequelize.STRING,
@@ -99,14 +99,9 @@ module.exports = (sequelize, Sequelize) => {
     });
   
     // Define associations
-    Order.belongsTo(sequelize.models.user, { foreignKey: 'userId' });
-    Order.belongsTo(sequelize.models.restaurant, { foreignKey: 'restaurantId' });
-    Order.belongsTo(sequelize.models.day, { foreignKey: 'dayId' });
-    Order.hasMany(sequelize.models.orderItem, { onDelete: 'CASCADE' });
-    // Order.belongsTo(sequelize.models.promoCode, { foreignKey: 'promoCode', targetKey: 'name', as: 'promo' });
-  
+ 
     // Calculate distance between two sets of latitude and longitude coordinates
-    Order.prototype.calculateDistance = function (restaurantLatitude, restaurantLongitude) {
+    order.prototype.calculateDistance = function (restaurantLatitude, restaurantLongitude) {
       if (!this.deliveryLatitude || !this.deliveryLongitude) {
         return null; // Handle missing coordinates
       }
@@ -135,6 +130,6 @@ module.exports = (sequelize, Sequelize) => {
       return degrees * (Math.PI / 180);
     }
   
-    return Order;
+    return order;
   };
   

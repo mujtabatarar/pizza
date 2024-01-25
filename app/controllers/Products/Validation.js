@@ -34,3 +34,50 @@ exports.getCategoryPayload = joi.object({
 exports.getOneCategoryWithChilds = joi.object({
   id: joi.number().required()
 });
+
+//promo validation
+exports.promoCreate = joi.object({
+  name: joi.string().required(),
+  description: joi.string().optional(),
+  discountType: joi.string().required(),
+  discountValue: joi.number().required(),
+  minBasketValue: joi.number().optional(),
+  totalVouchers: joi.number().optional(),
+  redeemsPerCustomer: joi.number().optional(),
+  validity: joi.number().optional(),
+  applicablePaymentTypes: joi.string().optional(),
+  expiryDate: joi.string().optional(),
+  startDate: joi.string().optional(),
+  status: joi.boolean().required(),
+
+})
+exports.promoUpdate = joi.object({
+  id: joi.string().required(),
+  name: joi.string().optional(),
+  description: joi.string().optional(),
+  discountType: joi.string().optional(),
+  discountValue: joi.number().optional(),
+  minBasketValue: joi.number().optional(),
+  totalVouchers: joi.number().optional(),
+  redeemsPerCustomer: joi.number().optional(),
+  validity: joi.number().optional(),
+  applicablePaymentTypes: joi.string().optional(),
+  expiryDate: joi.string().optional(),
+  startDate: joi.string().optional(),
+  status: joi.boolean().optional(),
+
+})
+
+exports.idValidate = joi.object({
+  id: joi.number().required()
+});
+
+exports.getAllPromoPayload = joi.object({
+  perPage: joi.number().required(),
+  pageNo: joi.number().required()
+});
+
+exports.getAllPromoCodeWithUsageBasicDetailsDto = joi.object({
+  perPage: joi.number().required(),
+  pageNo: joi.number().required()
+});

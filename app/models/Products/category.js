@@ -15,15 +15,7 @@ module.exports = (sequelize, Sequelize) => {
     isDeleted: {
       type: Sequelize.BOOLEAN,
       defaultValue: false
-    },
-    parentId: {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'category',
-        key: 'id',
-      },
-    },
+    }
   });
 
   return category;

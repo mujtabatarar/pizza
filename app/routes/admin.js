@@ -13,6 +13,7 @@ const {
 const { authenticate } = require("../controllers/Utils");
 const { createRole, updateRole, deleteRole, roleFindOne, roleFindAll, permissionsFindAll } = require('../controllers/Role');
 const { createSetting, getAllSettings, getSettingById, getSettingByName, updateSettingById, deleteSettingById } = require('../controllers/Setting');
+const products = require("../controllers/Products/Products")
 
 // admin login
 
@@ -47,6 +48,14 @@ router.get('/get-setting-by-id/:id', getSettingById);
 router.get('/get-setting-by-name/:name', getSettingByName);
 router.patch('/update-setting/:id', updateSettingById);
 router.delete('/delete-setting/:id', deleteSettingById);
+
+
+router.post("/promo", products.promo.create);
+router.put("/promo", products.promo.update);
+router.delete("/promo", products.promo.delete);
+router.get("/promos/usage", products.promo.getAllPromoCodeWithUsageBasicDetails);
+router.get("/promo/usages", products.promo.getParticularPromoFullUsageDetais);
+router.get("/promo", products.promo.getParticularPromoFullUsageDetais);
 
 
 
