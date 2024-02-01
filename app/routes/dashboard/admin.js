@@ -9,11 +9,12 @@ const {
   updatePassword, 
   verifyTwoFactor,
   updateTwoFactorStatus
-} = require('../controllers/Admin');
-const { authenticate } = require("../controllers/Utils");
-const { createRole, updateRole, deleteRole, roleFindOne, roleFindAll, permissionsFindAll } = require('../controllers/Role');
-const { createSetting, getAllSettings, getSettingById, getSettingByName, updateSettingById, deleteSettingById } = require('../controllers/Setting');
-const products = require("../controllers/Products/Products")
+} = require('../../controllers/Admin/Admin');
+const { authenticate } = require("../../controllers/Other/Utils");
+const { createRole, updateRole, deleteRole, roleFindOne, roleFindAll, permissionsFindAll } = require('../../controllers/Admin/Role');
+const { createSetting, getAllSettings, getSettingById, getSettingByName, updateSettingById, deleteSettingById, getAllTimmings, deleteTimmingById, getTimmingByDay, getTimmingDetails, updateTimmingById, getTimmingById, createTiming } = require('../../controllers/Admin/Setting');
+const products = require("../../controllers/Products/Products")
+const { getAllMessages, getMessageById, deleteMesssageById } = require('../../controllers/Admin/Message');
 
 // admin login
 
@@ -50,6 +51,7 @@ router.patch('/update-setting/:id', updateSettingById);
 router.delete('/delete-setting/:id', deleteSettingById);
 
 
+//Promo
 router.post("/promo", products.promo.create);
 router.put("/promo", products.promo.update);
 router.delete("/promo", products.promo.delete);
@@ -57,8 +59,17 @@ router.get("/promos/usage", products.promo.getAllPromoCodeWithUsageBasicDetails)
 router.get("/promo/usages", products.promo.getParticularPromoFullUsageDetais);
 router.get("/promo", products.promo.getParticularPromoFullUsageDetais);
 
+//Messages
+router.get('/get-all-message', getAllMessages);
+router.get('/get-single-message/:id', getMessageById);
+router.delete('/delete-single-message/:id', deleteMesssageById);
 
-
-
+//timming
+router.post('/timming', createTiming);
+router.get('/timming', getAllTimmings),
+router.get('/timming/get-one-by-day/:day', getTimmingByDay);
+router.get('/timming/get-one-by-id/:id', getTimmingById);
+router.patch('/timming/:id', updateTimmingById);
+router.delete('/timming/:id', deleteTimmingById);
 
 module.exports = router;

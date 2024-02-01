@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { 
   login, updatePassword, forgetPassword, verifyTwoFactor, sendOtp, verifyOtp
-} = require('../controllers/Admin');
-const products = require("../controllers/Products/Products")
+} = require('../../controllers/Admin/Admin');
+const products = require("../../controllers/Products/Products")
 
 
 

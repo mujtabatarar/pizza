@@ -1,9 +1,9 @@
-const db = require("../models");
+const db = require("../../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 // var nodemailer = require("nodemailer");
-const { errorHandler } = require("./errHandler");
+const { errorHandler } = require("../Other/errHandler");
 // const adminSession = require('../models/AdminSession');
 const admins = db.admins;
 

@@ -1,12 +1,12 @@
-const db = require("../models");
+const db = require("../../models");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 var nodemailer = require("nodemailer");
-const { errorHandler } = require("./errHandler");
-const { sendSmsTwilio } = require("./Sms");
+const { errorHandler } = require("../Other/errHandler");
+const { sendSmsTwilio } = require("../Other/Sms");
 // const adminSession = require('../models/AdminSession');
-const { getSettingByNameInternal } = require('../controllers/Setting');
+const { getSettingByNameInternal } = require('./Setting');
 
 const admins = db.admins;
 const otp = db.otp;
@@ -126,6 +126,7 @@ exports.login = async (req, res, next) => {
     let twofactorPhoneEnabled = false;
     let twofactorEmailEnabled = false;
 
+    console.log("In admin login")
     if (email && password) {
       let adminData = await admins.findOne({
         where: {
@@ -135,7 +136,8 @@ exports.login = async (req, res, next) => {
         },
         raw: true,
       });
-
+      console.log("admin data -------------------------");
+      console.log(adminData);
       if (adminData) {
         let hash = adminData?.password;
         let result = bcrypt.compareSync(password, hash);
@@ -272,10 +274,11 @@ exports.login = async (req, res, next) => {
           res.send(errorHandler[401])
         }
       } else {
-        res.send(errorHandler[404])
+        // res.send(errorHandler[404]);
+        res.status(403).send({ message: "No admin found against this email."});
       }
     } else {
-      res.send(errorHandler[400])
+      res.status(400).send({ message: "email and password required"});
     }
   } catch (err) {
     console.log("error", err);

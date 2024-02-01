@@ -1,7 +1,7 @@
-const db = require("../models");
+const db = require("../../models");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const { errorHandler } = require("./errHandler");
+const { errorHandler } = require("../Other/errHandler");
 // const adminSession = require('../models/AdminSession');
 const role = db.role;
 const permission = db.permissions;

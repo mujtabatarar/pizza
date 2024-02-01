@@ -1,5 +1,5 @@
 const db = require("../../models");
-const { createCategoryPayload, updateCategoryPayload, deleteCategoryPayload, getCategoryPayload, getOneCategoryWithChilds } = require("./Validation")
+const { createCategoryPayload, updateCategoryPayload, deleteCategoryPayload, getCategoryPayload, getOneCategoryWithChilds } = require("../Validation")
 module.exports = {
   pizzas: {
     async create(req, res) {
@@ -353,7 +353,7 @@ module.exports = {
     },
     async getOne(req, res) {
       try {
-        const { error, value: { id } } = getOneCategoryWithChilds.validate(req.query);
+        const { error, value: { id } } = getOneCategoryWithChilds.validate(req.params);
         if (!error) {
           let categories = await db.category.findAll({
             where: {
@@ -394,13 +394,13 @@ module.exports = {
   cart: {
     async create(req, res) {
       try {
-        const { quantity, customerId, adminId, productId, variantId, variantPrice, orderNotes, } = req.body;
+        const { quantity, customerId, adminId, productId, varientId, varientPrice, orderNotes, } = req.body;
         const { sessionId } = req.headers;
-        let cartItem, variant, product;
+        let cartItem, varient, product;
 
         // Check if the product is avaliable for sale.
-        if (variantId != null || variantId != undefined) {
-          variant = await db.varients.findByPk(variantId, {
+        if (varientId != null || varientId != undefined) {
+          varient = await db.varients.findByPk(varientId, {
             where: {
               status: true,
             },
@@ -421,8 +421,8 @@ module.exports = {
           cartItem = await db.cart.findOne({
             where: {
               customerId,
-              selectedProductId: productId,
-              selectedVariantId: variantId,
+              productId,
+              varientId,
             },
           });
         } else if (adminId != null || adminId != undefined) {
@@ -431,9 +431,7 @@ module.exports = {
             where: {
               adminId: adminId,
               productId: productId,
-              variantId: variantId,
-              selectedProductId: productId,
-              selectedVariantId: variantId,
+              varientId: varientId,
             },
           });
         } else {
@@ -442,7 +440,7 @@ module.exports = {
             where: {
               sessionId: sessionId,
               selectedProductId: productId,
-              selectedVariantId: variantId,
+              varientId: varientId,
             },
           });
         }
@@ -457,9 +455,9 @@ module.exports = {
             customerId,
             adminId,
             sessionId: sessionId,
-            selectedProductId: productId,
-            selectedVariantId: variantId,
-            selectedVariantPrice: variantPrice,
+            productId: productId,
+            varient: varientId,
+            varientPrice: varientPrice,
             orderNotes: orderNotes,
           });
         }
@@ -1155,7 +1153,155 @@ module.exports = {
         console.log("error", err);
         res.status(503).send({ success: false, message: "Internal Server Error." });
       }
-    }
+    },
+    async applyPromoOnCart (req,res) {
+      try{  
 
-  },
+          // a - get promoCode detail from promo Code name
+            // a1 check if minBasketValue > all cart items variantPrices 
+            // a2 check if totalVouchers have not exceed promoUsage,
+            // a3 check if redeemsPerCustomer have not exceed count of rows rows in promoUsage table where userId match and promoId match.
+            // a4 check if validity date is not pass.
+            // a5 check if promo is for forFirstOrder and user have no history in order table.
+            // a6 check if isDeleted is not true
+            // a7 check if expiryDate is not passed.
+            // a8 check if startDate is passed.
+            // a9 check if status is true.
+            // a10 check if promoUsages is less than totalVouchers, if yes than expired that promo.
+            // return appropriate error messages for these test case fails.
+
+          // b - return error if no promo found
+
+          // c - check if previous promo code exist on any cart items of the adminid/customerId/sessionId found in request body,
+            // c1 - if c than check if that promo is expired.
+            // c1-a - if c and c1 mean it is expired than remove on all cart items of this user
+            // c3 , check if that previous promo is applicable with other promo code and check if current promo code is applicable with other promo code, if any of them is not applicable with other promo code than dont apply, 
+          // d - 
+          // while applying check if that promo code is forFirstOrder 
+
+          // check if promo applicable on cart item one by one.
+
+          // if promo 
+
+      }catch (err){
+
+      }
+    },
+
+    // a - get promoCode detail from promoCode name
+    async getPromoCodeDetail (promoCodeName) {
+      try {
+        const promoCode = await PromoCode.findOne({ where: { name: promoCodeName } });
+        return promoCode;
+      } catch (error) {
+        console.error('Error fetching promo code detail:', error);
+        throw new Error('Error fetching promo code detail');
+      }
+    },
+
+    // a1 check if minBasketValue > all cart items variantPrices
+    async isMinBasketValueValid (promoCode, cartItems) {
+      const totalVariantPrices = cartItems.reduce((total, item) => total + item.variantPrice, 0);
+      return promoCode.minBasketValue <= totalVariantPrices;
+    },
+
+    // a2 check if totalVouchers have not exceeded promoUsage
+    async isTotalVouchersValid (promoCode) {
+      return promoCode.totalVouchers > promoCode.promoUsages.length;
+    },
+
+    // a3 check if redeemsPerCustomer have not exceeded count of rows in promoUsage table
+    async isRedeemsPerCustomerValid (promoCode, userId) {
+      const userRedeemsCount = await db.promoUsage.count({
+        where: {
+          userId: userId,
+          promoId: promoCode.id,
+          },
+        });
+      return promoCode.redeemsPerCustomer > userRedeemsCount;
+    },
+
+    // a4 check if validity date is not passed
+    async isValidityDateValid  (promoCode) {
+      return promoCode.validity > new Date();
+    },
+
+    // a5 check if promo is for first order and user has no history in order table
+    async isFirstOrderValid (promoCode, userId) {
+      const userOrderCount = await Order.count({
+        where: { userId: userId },
+      });
+      return !promoCode.forFirstOrder || userOrderCount === 0;
+    },
+
+    // a6 check if isDeleted is not true
+    async isNotDeletedValid (promoCode) {
+      return !promoCode.isDeleted;
+    },
+
+    // a7 check if expiryDate is not passed
+    async isExpiryDateValid (promoCode)  {
+      return promoCode.expiryDate > new Date();
+    },
+
+    // a8 check if startDate is passed
+    async isStartDateValid (promoCode) {
+      return promoCode.startDate <= new Date();
+    },
+
+    // a9 check if status is true
+    async isStatusValid (promoCode) {
+      return promoCode.status;
+    },
+
+    // a10 check if promoUsages is less than totalVouchers, if yes then expire that promo
+    async expirePromoIfVouchersExhausted (promoCode) {
+      if (promoCode.promoUsages.length >= promoCode.totalVouchers) {
+        await promoCode.update({ status: false });
+        return true; // Promo expired
+      }
+      return false; // Promo not expired
+    },
+
+    // Apply these checks before applying the promo code
+    async applyPromoCode (promoCodeName, userId, cartItems) {
+      try {
+        const promoCode = await getPromoCodeDetail(promoCodeName);
+
+        if (
+          isMinBasketValueValid(promoCode, cartItems) &&
+          isTotalVouchersValid(promoCode) &&
+          (await isRedeemsPerCustomerValid(promoCode, userId)) &&
+          isValidityDateValid(promoCode) &&
+          isFirstOrderValid(promoCode, userId) &&
+          isNotDeletedValid(promoCode) &&
+          isExpiryDateValid(promoCode) &&
+          isStartDateValid(promoCode) &&
+          isStatusValid(promoCode)
+        ) {
+          const promoExpired = await expirePromoIfVouchersExhausted(promoCode);
+          if (!promoExpired) {
+            // Apply promo code logic here
+            console.log('Promo code applied successfully!');
+          } else {
+            console.log('Promo code expired.');
+            throw new Error('Promo code expired.');
+          }
+        } else {
+          console.log('Promo code is not valid for the given conditions.');
+          throw new Error('Promo code is not valid for the given conditions.');
+        }
+      } catch (error) {
+        console.error('Error applying promo code:', error);
+        throw new Error('Error applying promo code');
+      }
+    },
+
+    // // Example usage
+    // const promoCodeName = 'your_promo_code_name';
+    // const userId = 1; // Replace with the actual user ID
+    // const cartItems = [...]; // Replace with the actual cart items
+    // applyPromoCode(promoCodeName, userId, cartItems);
+    //   },
+}
 }

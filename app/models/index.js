@@ -29,6 +29,8 @@ const cartModel = require("./Order/cart");
 const orderModel = require("./Order/order");
 const orderItemModel = require("./Order/orderItem");
 const promoModel = require("./promo");
+const userMessageModel = require("./Admin/message");
+const restaurantTimingModel = require("./restaurantTiming");
 
 // extra
 const cheeseModel = require("./Extra/cheese");
@@ -51,6 +53,9 @@ db.cart = cartModel(sequelizeInstance, Sequelize);
 db.order = orderModel(sequelizeInstance, Sequelize);
 db.orderItem = orderItemModel(sequelizeInstance, Sequelize);
 db.promo = promoModel(sequelizeInstance, Sequelize);
+db.usersMessage = userMessageModel(sequelizeInstance, Sequelize);
+db.restaurantTiming = restaurantTimingModel(sequelizeInstance, Sequelize);
+
 // extra
 db.cheese = cheeseModel(sequelizeInstance, Sequelize);
 db.crust_type = crustTypeModel(sequelizeInstance, Sequelize);
@@ -101,6 +106,7 @@ db.cart.belongsTo(db.customers);
 db.cart.belongsTo(db.admins);
 db.cart.belongsTo(db.products);
 db.cart.belongsTo(db.varients);
+db.cart.hasMany(db.promo, {foreignKey: "varientId"});
 
 // db.order.belongsTo(db.customers, { foreignKey: 'customerId' });
 // db.order.belongsTo(db.admins, { foreignKey: 'adminId' });

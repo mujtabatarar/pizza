@@ -5,27 +5,11 @@ module.exports = (sequelize, Sequelize) => {
         allowNull: false,
         defaultValue: 1,
       },
-      // customerId: {
-      //   type: Sequelize.STRING,
-      //   allowNull: true,
-      // },
-      // adminId: {
-      //   type: Sequelize.STRING,
-      //   allowNull: true,
-      // },
       sessionId: {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      // selectedProductId: {
-      //   type: Sequelize.INTEGER,
-      //   allowNull: true,
-      // },
-      // selectedVariantId: {
-      //   type: Sequelize.INTEGER,
-      //   allowNull: true,
-      // },
-      variantPrice: {
+      varientPrice: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: true,
       },
@@ -33,10 +17,10 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      // isCustomerCart: {
-      //   type: Sequelize.BOOLEAN,
-      //   default: false,
-      // }
+      promoIds: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
     });
     return cartItem;
   };

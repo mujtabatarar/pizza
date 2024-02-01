@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { 
   login, 
-} = require('../controllers/Admin');
-const products = require("../controllers/Products/Products")
-const extra = require('../controllers/Products/Extra')
+} = require('../../controllers/Admin/Admin');
+const products = require("../../controllers/Products/Products")
+const extra = require('../../controllers/Products/Extra')
 
 
 router.get("/pizza", products.pizzas.get);

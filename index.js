@@ -11,13 +11,14 @@ app.use(bodyParser.json());
 
 
 const db = require('./app/models/index');
-const adminRoutes = require('./app/routes/admin')
-const SuperAdminRoutes = require("./app/routes/SuperAdmin")
-const products = require("./app/routes/products")
-const userRoutes = require('./app/routes/user');
-const authenticateJWT = require('./app/routes/auth');
-const { login } = require('./app/controllers/Admin');
-const unprotectedRoutes = require("./app/routes/unprotectedRoutes")
+const adminRoutes = require('./app/routes/dashboard/admin')
+const SuperAdminRoutes = require("./app/routes/others/SuperAdmin")
+const products = require("./app/routes/dashboard/products")
+const userRoutes = require('./app/routes/others/user');
+const authenticateJWT = require('./app/routes/others/auth');
+const { login } = require('./app/controllers/Admin/Admin');
+const unprotectedRoutes = require("./app/routes/dashboard/unprotectedRoutes")
+const dashboardRoutes = require("./app/routes/web/websiteRoutes"); 
 
 
 
@@ -31,6 +32,8 @@ app.use('/admin', authenticateJWT, adminRoutes);
 app.use('/super-admin', authenticateJWT, SuperAdminRoutes);
 app.use('/products', authenticateJWT, products);
 app.use('/main', unprotectedRoutes);
+app.use('/dashboard', dashboardRoutes);
+
 
 // app.use('/user', authenticateJWT, userRoutes); // Uncomment this line if you want to protect the user routes
 

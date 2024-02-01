@@ -58,7 +58,16 @@ module.exports = (sequelize, Sequelize) => {
       status: {
         type: Sequelize.BOOLEAN,
         allowNull: true,
-      }
+      },
+      isApplicableWithOtherPromoCodes: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false, // Adjust allowNull based on your requirements
+        defaultValue: true, // Set a default value if necessary
+      },
+      promoUsages:{
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
     });
   
     // Define associations
