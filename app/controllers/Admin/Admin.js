@@ -152,14 +152,14 @@ exports.login = async (req, res, next) => {
             console.log("----1----------------------------email verified false");
 
             // fetch auth setting for admin or user login.
-            if (adminData.adminType === "admin") {
+            if (adminData?.adminType === "admin") {
               const settingsEmail = await getSettingByNameInternal("TWO_FACTOR_AUTH_ADMIN_EMAIL");
               console.log(settingsEmail);
               console.log("----2----------------------------email verified false");
-              if (settingsEmail.value === "true") {
+              if (settingsEmail?.value === "true") {
                 twofactorEmailEnabled = true;
               }
-            } else if (adminData.adminType === "user") {
+            } else if (adminData?.adminType === "user") {
               const settingsEmail = await getSettingByNameInternal("TWO_FACTOR_AUTH_USER_EMAIL");
               console.log(settingsEmail);
               if (settingsEmail.value === "true") {
@@ -171,7 +171,7 @@ exports.login = async (req, res, next) => {
             if (twofactorEmailEnabled) {
               console.log("going to verify email")
               var transporter = nodemailer.createTransport({
-                service: "gmail",
+                service: "smtp.gmail.com",
                 auth: {
                   user: process.env.SENDER_EMAIL,
                   pass: process.env.SENDER_PASS,

@@ -106,7 +106,7 @@ db.cart.belongsTo(db.customers);
 db.cart.belongsTo(db.admins);
 db.cart.belongsTo(db.products);
 db.cart.belongsTo(db.varients);
-db.cart.hasMany(db.promo, {foreignKey: "varientId"});
+// db.cart.hasMany(db.promo, {foreignKey: "promoId"});
 
 // db.order.belongsTo(db.customers, { foreignKey: 'customerId' });
 // db.order.belongsTo(db.admins, { foreignKey: 'adminId' });

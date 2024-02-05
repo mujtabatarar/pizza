@@ -474,7 +474,7 @@ module.exports = {
         console.log(req.params);
         const { sessionid } = req.headers;
         let cartItem;
-        // Retrieve cart items along with product and variant details
+        // Retrieve cart items along with product and varient details
         if (customerId != null || customerId != undefined) {
           console.log("--------------------------------customerId--------------------------------");
           cartItem = await db.cart.findAll({
@@ -527,7 +527,7 @@ module.exports = {
       try {
         const { customerId, adminId } = req.params;
         const { sessionid } = req.headers;
-        const { productId, variantId } = req.query;
+        const { productId, varientId } = req.query;
 
         let whereCondition = {};
 
@@ -544,11 +544,11 @@ module.exports = {
         whereCondition.productId = productId;
 
         // Add variantId condition if provided
-        if (variantId) {
-          whereCondition.variantId = variantId;
+        if (varientId) {
+          whereCondition.varientId = varientId;
         } else {
           // If variantId is not provided, delete items without a specific variant
-          delete whereCondition.variantId;
+          delete whereCondition.varientId;
         }
 
         // Delete the item from the cart
@@ -1175,11 +1175,11 @@ module.exports = {
           // c - check if previous promo code exist on any cart items of the adminid/customerId/sessionId found in request body,
             // c1 - if c than check if that promo is expired.
             // c1-a - if c and c1 mean it is expired than remove on all cart items of this user
-            // c3 , check if that previous promo is applicable with other promo code and check if current promo code is applicable with other promo code, if any of them is not applicable with other promo code than dont apply, 
+            // c3 , check if that previous promo is applicable with other promo code and check if current promo code is applicable with other promo code, if any of them is not applicable with other promo code than dont apply new promo, 
           // d - 
-          // while applying check if that promo code is forFirstOrder 
+          // while applying check if that promo code is forFirstOrder if yes then check if user has precious order in order table.
 
-          // check if promo applicable on cart item one by one.
+          // check if promo applicable on cart item one by one. 
 
           // if promo 
 
@@ -1191,7 +1191,7 @@ module.exports = {
     // a - get promoCode detail from promoCode name
     async getPromoCodeDetail (promoCodeName) {
       try {
-        const promoCode = await PromoCode.findOne({ where: { name: promoCodeName } });
+        const promoCode = await db.promo.findOne({ where: { name: promoCodeName } });
         return promoCode;
       } catch (error) {
         console.error('Error fetching promo code detail:', error);
@@ -1228,7 +1228,7 @@ module.exports = {
 
     // a5 check if promo is for first order and user has no history in order table
     async isFirstOrderValid (promoCode, userId) {
-      const userOrderCount = await Order.count({
+      const userOrderCount = await db.order.count({
         where: { userId: userId },
       });
       return !promoCode.forFirstOrder || userOrderCount === 0;
@@ -1257,51 +1257,144 @@ module.exports = {
     // a10 check if promoUsages is less than totalVouchers, if yes then expire that promo
     async expirePromoIfVouchersExhausted (promoCode) {
       if (promoCode.promoUsages.length >= promoCode.totalVouchers) {
-        await promoCode.update({ status: false });
+        await db.promo.update({ status: false,  },{where:{id: promoCode.id}});
         return true; // Promo expired
       }
       return false; // Promo not expired
     },
 
-    // Apply these checks before applying the promo code
-    async applyPromoCode (promoCodeName, userId, cartItems) {
-      try {
-        const promoCode = await getPromoCodeDetail(promoCodeName);
-
-        if (
-          isMinBasketValueValid(promoCode, cartItems) &&
-          isTotalVouchersValid(promoCode) &&
-          (await isRedeemsPerCustomerValid(promoCode, userId)) &&
-          isValidityDateValid(promoCode) &&
-          isFirstOrderValid(promoCode, userId) &&
-          isNotDeletedValid(promoCode) &&
-          isExpiryDateValid(promoCode) &&
-          isStartDateValid(promoCode) &&
-          isStatusValid(promoCode)
-        ) {
-          const promoExpired = await expirePromoIfVouchersExhausted(promoCode);
-          if (!promoExpired) {
-            // Apply promo code logic here
-            console.log('Promo code applied successfully!');
-          } else {
-            console.log('Promo code expired.');
-            throw new Error('Promo code expired.');
-          }
-        } else {
-          console.log('Promo code is not valid for the given conditions.');
-          throw new Error('Promo code is not valid for the given conditions.');
-        }
-      } catch (error) {
-        console.error('Error applying promo code:', error);
-        throw new Error('Error applying promo code');
-      }
+    // Helper function to check if a promo code is applicable with other promo codes
+    async isApplicableWithOtherPromoCodes (promoCodeName) {
+      const promoCode = await db.promo.findOne({ where: { name: promoCodeName } });
+      return promoCode ? promoCode.isApplicableWithOtherPromoCodes : false;
     },
 
-    // // Example usage
-    // const promoCodeName = 'your_promo_code_name';
-    // const userId = 1; // Replace with the actual user ID
-    // const cartItems = [...]; // Replace with the actual cart items
-    // applyPromoCode(promoCodeName, userId, cartItems);
-    //   },
-}
+    // Helper function to check if a promo code is expired
+    async isPromoCodeExpired (promoCode) {
+      return promoCode.expiryDate <= new Date();
+    },
+
+    // Helper function to remove a promo code from a comma-separated string
+    async removePromoCodeFromList (promoIds, promoCodeName) {
+      const promoIdArray = promoIds.split(',').map(Number);
+      const updatedPromoIds = promoIdArray.filter(id => id !== promoCodeName).join(',');
+      return updatedPromoIds;
+    },
+
+    async checkIfFirstOrder(customerId){
+    try{
+        const userOrderCount = await db.order.count({ where: { customerId: customerId } });
+        if (userOrderCount === 0 || userOrderCount == null || userOrderCount == undefined){
+          return true;
+        }else{
+          return false;
+        }
+      }catch(err){
+        throw new Error('Error fetching order detail');
+      }
+    },
+    
+
+      // c - check if a previous promo code exists on any cart items of the adminId/customerId/sessionId found in the request body
+      // c1 - if c, then check if that promo is expired
+      // c1-a - if c and c1 mean it is expired, then remove it on all cart items of this user
+      // c3 - check if that previous promo is applicable with other promo code and check if the current promo code is applicable with other promo code, if any of them is not applicable with other promo code than don't apply the new promo
+
+    // Apply these checks before applying the promo code
+    async applyPromoCodeOnCart (req, res) {
+      try {
+        const { promoCodeName, customerId, sessionId} = req?.body;
+        const promoCode = await this.getPromoCodeDetail(promoCodeName);
+        const cartItems = await db.cart.findOne({ where: { [Op.or]: [{ userId: userId }, { sessionId: sessionId }] } });
+        if(!cartItems) throw new Error('Cart empty');
+
+        if (!this.isMinBasketValueValid(promoCode, cartItems)) {
+            throw new Error('Minimum basket value not achieved');
+        } else if (!this.isTotalVouchersValid(promoCode)) {
+            throw new Error('Promo code overall limit exceeded');
+        } else if (!(await this.isRedeemsPerCustomerValid(promoCode, userId))) {
+            throw new Error('Promo code redeems usage limit exceeded');
+        } else if (!this.isValidityDateValid(promoCode)) {
+            throw new Error('Promo code validity date not valid');
+        } else if (!this.isFirstOrderValid(promoCode, userId)) {
+            throw new Error('Invalid for first order');
+        } else if (!this.isNotDeletedValid(promoCode)) {
+            throw new Error('Promo code is deleted');
+        } else if (!this.isExpiryDateValid(promoCode)) {
+            throw new Error('Promo code has expired');
+        } else if (!this.isStartDateValid(promoCode)) {
+            throw new Error('Promo code is not yet valid');
+        } else if (!this.isStatusValid(promoCode)) {
+            throw new Error('Promo code is not in a valid status');
+        }else if (await this.expirePromoIfVouchersExhausted(promoCode)){
+          throw new Error('Promo code is not in a valid status');
+        }else if( promoCode.forFirstOrder === true && !checkIfFirstOrder(customerId)){
+          throw new Error('Promo code is for first order, cant applied on this cart');
+        }
+
+        if (cartItems.promoIds) {
+          // check if setting table have a setting for how many promo customer can apply? if it exceed limit throw error 
+          promoSetting = await db.setting.findOne({where: { name: "CART_MAXIMUM_PROMO_CAP"}});
+          if(promoSetting.value.parseInt === 1){
+            throw new Error('Multiple promo code cannot be applied at one');
+          }
+
+          const previousPromoCodes = cartItems.promoIds.split(',');
+          console.log(previousPromoCodes);
+          console.log("--------------------------------");
+
+          // Check each previous promo code
+          for (const previousPromoCode of previousPromoCodes) {
+            const oldPromoCode = await db.promo.findOne({ where: { id: previousPromoCode } });
+            let updatedPromoIds = cartItems.promoIds;
+            if (oldPromoCode) {
+              // c1 - Check if the previous promo is expired
+              if (this.isPromoCodeExpired(oldPromoCode)) {
+                // c1-a - If c and c1 mean it is expired, then remove it on all cart items of this user
+                updatedPromoIds = this.removePromoCodeFromList(cartItems.promoIds, oldPromoCode.id);
+                // await db.cart.update({ promoIds: updatedPromoIds });
+                console.log(`Previous promo code ${oldPromoCode.name} expired and removed from cart items.`);
+              }
+              // c3 - Check if the previous promo is applicable with other promo code and check if the current promo code is applicable with other promo code
+              if (
+                promoCode.isApplicableWithOtherPromoCodes &&
+                oldPromoCode.isApplicableWithOtherPromoCodes
+              ) {
+                updatedPromoIds = updatedPromoIds ? `${updatedPromoIds},${promoCode.id}` : promoCode.id;
+                await db.cart.update({ promoIds: updatedPromoIds });
+                console.log('New promo code applied successfully!');
+
+              } else {
+                console.log('New promo code is not applicable with the previous promo code.');
+                throw new Error('New promo code is not applicable with the previous promo code.');
+              }
+              
+            }
+          }
+        } else {
+          // Apply the new promo code logic here (assuming no previous promo code)
+          await db.cart.update({ promoIds: promoCode.id });
+          console.log('New promo code applied successfully!');
+        }
+
+
+          // c - check if a previous promo code exists on any cart items of the adminId/customerId/sessionId found in the request body
+          // c1 - if c, then check if that promo is expired
+          // c1-a - if c and c1 mean it is expired than remove on all cart items of this user
+          // c3 - check if that previous promo is applicable with other promo code and check if the current promo code is applicable with other promo code, if any of them is not applicable with other promo code than don't apply the new promo
+
+
+          // d - While applying, check if that promo code is forFirstOrder. If yes, then check if the user has a previous order in the order table.
+          // const checkForFirstOrderPromoAndApply = async (promoCodeName, userId) => {
+          //   try {
+          // const promoCode = await PromoCode.findOne({ where: { name: promoCodeName } });
+
+          
+        
+        } catch (error) {
+          console.error('Error applying promo code:', error);
+          throw new Error('Error applying promo code');
+        }
+      }
+    }
 }
